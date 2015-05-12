@@ -15,6 +15,14 @@
 * Sensor board : AdaFruit 10-DOF.
 * Battery : KyPOM 3cells (3S1P) 3700mAh 35C.
 
+## Tools
+
+* Repository hosting service : github.com
+* Arduino code : emacs
+* Arduino project manager : ino
+* Schematics : Qcus
+* Battery charger : IMax B6 - SkyRC
+
 ## TODO
 
 * Sensors
