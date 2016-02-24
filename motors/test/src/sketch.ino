@@ -14,38 +14,48 @@ Vin -> Button -> Resistor -> GND
 
 */
 
-int pinM1 = 10;
-int pinMoff = 11;
-int M1Val = 0;
+#define SERIALOUT Serial
+#define SERIALIN Serial1
 
-int pinButton = 2;
-int buttonVal = 0;
-
-//void setPwmFrequency(int pin, int divisor);
+/* Red = Front */
+int pinFrontRight = 10,
+  pinFrontLeft = 13,
+  pinRearRight = 9,
+  pinRearLeft = 6;
+int pinOff = 11;
+int valFrontRight = 0, valFrontLeft = 0, valRearRight = 0, valRearLeft = 0;
 
 // the setup routine runs once when you press reset:
 void setup() {
 
   // Init Serial
-  Serial.begin(9600);
+  SERIALOUT.begin(9600);
+  SERIALIN.begin(9600);
 
   // Set PWM Frequency
   //setPwmFrequency(10, 64);
   //delay(1000);
 
   // Set Pin as OutPut
-  pinMode(pinM1, OUTPUT);
-  pinMode(pinButton, INPUT);
+  pinMode(pinFrontRight, OUTPUT);
+  pinMode(pinFrontLeft, OUTPUT);
+  pinMode(pinRearRight, OUTPUT);
+  pinMode(pinRearLeft, OUTPUT);
+  pinMode(pinOff, OUTPUT);
   
-  pinMode(pinMoff, OUTPUT);
-  pinMode(pinButton, INPUT);
   delay(1000);
 
-  Serial.println("Go go go !");
-  M1Val = 100;
+  SERIALOUT.println("Go go go !");
+  valFrontRight = 100;
+  valFrontLeft = 100;
+  valRearRight = 100;
+  valRearLeft = 100;
 
-  analogWrite(pinM1, 101);
-  
+  analogWrite(pinFrontRight, valFrontRight);
+  analogWrite(pinFrontLeft, valFrontLeft);
+  analogWrite(pinRearRight, valRearRight);
+  analogWrite(pinRearLeft, valRearLeft);
+  analogWrite(pinOff, 100);
   
 }
 
@@ -56,24 +66,54 @@ void loop() {
     valeur min : 140 sans helisse
     valeur min : 145 avec helisse
   */
+  SERIALOUT.println("loop");
+  delay(500);  // wait for a second
 
-  buttonVal = digitalRead(pinButton);
-  
-  if(buttonVal == HIGH) {
-    Serial.println("HIGH");
-    M1Val++;
-    
-    if(M1Val > 255) {
-      M1Val = 140;
-    }
-    
-    analogWrite(pinM1, M1Val);  // analogRead values go from 0 to 1023, analogWrite values from 0 to 255
-    
+  if (SERIALIN.available() == 0) {
+    return;
   }
   
-  Serial.println(M1Val);
-  delay(500);  // wait for a second
-  
+  String commande = SERIALIN.readStringUntil('\n');
+
+  char nomMoteur = commande[0];
+  String valeurStr = commande.substring(1, commande.length());
+  int valeur = valeurStr.toInt();
+  if (valeur > 255) {
+    valeur = 255;
+  }
+  if (valeur < 0) {
+    valeur = 0;
+  }
+  switch (nomMoteur) {
+    /*
+      On imagine que l'on place le drone face à soi, avec les deux branches blanches en bas et à droite
+      Dans ce cas, les deux moteurs posés sur les branches blanches sont nommés E et S, et les deux moteurs posés sur les deux branches rouges sont nommés N et O.
+      V2 explications =p :
+Rouge = avant
+avant droit = N
+avant gauche = O
+arriere droit = E
+arriere gauche = S
+     */
+ case 'N':
+    analogWrite(pinFrontRight, valeur);
+    valFrontRight = valeur;
+    break;
+  case 'S':
+    analogWrite(pinFrontLeft, valeur);
+    valFrontLeft = valeur;
+    break;
+  case 'E':
+    analogWrite(pinRearRight, valeur);
+    valRearRight = valeur;
+    break;
+  case 'O':
+    analogWrite(pinRearLeft, valeur);
+    valRearLeft = valeur;
+    break;
+  }
+  String nomMoteurString = (String)nomMoteur;
+  SERIALOUT.println("on a " + nomMoteurString + " = " + valeurStr);
 }
 
 
@@ -107,3 +147,35 @@ void setPwmFrequency(int pin, int divisor) {
     TCCR1B = TCCR1B & 0b11111000 | mode;
   }
 }
+/*
+void setup() {
+
+  Serial.begin(9600);
+  Serial1.begin(9600);
+
+}
+
+void loop() {
+
+  delay(500);  // wait for a second
+
+  /*if (Serial.available() != 0) {
+  
+    String commande1 = Serial.readStringUntil('\n');
+
+    Serial1.print(commande1);
+
+    }*/
+/*
+  if (Serial1.available() != 0) {
+  
+    String commande2 = Serial1.readStringUntil('\n');
+
+    Serial.print(commande2);
+
+  }
+
+}
+  
+  
+*/
