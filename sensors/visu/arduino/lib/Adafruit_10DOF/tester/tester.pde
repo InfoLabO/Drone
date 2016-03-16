@@ -64,8 +64,7 @@ void displaySensorDetails(void)
 
 void setup(void)
 {
-  Serial.begin(9600);
-  delay(5000);
+  Serial.begin(115200);
   Serial.println(F("Adafruit 10DOF Tester")); Serial.println("");
   
   /* Initialise the sensors */
