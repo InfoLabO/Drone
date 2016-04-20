@@ -1,0 +1,5 @@
+[build]
+board-model = nano
+
+[upload]
+board-model = nano
