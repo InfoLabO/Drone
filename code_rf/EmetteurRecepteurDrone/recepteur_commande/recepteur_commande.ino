@@ -3,6 +3,28 @@
 
 #include <VirtualWire.h>
 
+template<typename K, typename V>
+struct Pair {
+  public:
+  K first;
+  V second;
+
+  Pair(K const& k, V const& v): first{k}, second{v}
+    {   } 
+
+  Pair() {  }
+};
+
+template<typename K, typename V, int tailleMax>
+class Map {
+  public:
+    V const& operator[](K const& k) const { 
+    }
+
+  private:
+    Pair<K, V> pairs[tailleMax];
+};
+
 const int led_pin = 13;
 const int transmit_pin = 12;
 const int receive_pin = 11;
@@ -29,7 +51,7 @@ Timer t;
 
 int tempsEcoule = 0;
 const int deltaTemps = 50;
-const int tropLongtemps = 2000;
+const int tropLongtemps = 2000;    //Durée en secondes, au delà, on considère que l'emetteur et le récepteur ne sont plus en contact.
 
 void setup() {
   pinMode(led_pin, OUTPUT);
@@ -42,7 +64,7 @@ void setup() {
   vw_rx_start();
   Serial.begin(9600);
   Serial.println("Coucou le monde");
-  //t.every(deltaTemps, updateTempsEcoule);
+  t.every(deltaTemps, updateTempsEcoule);
 }
 
 uint8_t rec[20];
@@ -50,7 +72,7 @@ uint8_t rec[20];
 byte calcCRC8(uint8_t const* const buff, const int len)   //len = longueur du buffer incluant le checksum
 {
   byte p = PolyNum;
-  constexpr auto last = sizeof(rec) - 1;
+  const size_t last = sizeof(rec) - 1;
   for (int i = 0; i < len - 1; i++)
   {
     p = CRC8(rec[i], p);
@@ -60,7 +82,7 @@ byte calcCRC8(uint8_t const* const buff, const int len)   //len = longueur du bu
 
 bool checkCRC8(uint8_t const* const buff, const int len)   //Vérifier que le dernier octet d'un buffer correspond bien au checksum du reste du buffer. len = longueur du buffer incluant le checksum.
 {
-  const auto p = calcCRC8(buff, len);
+  const byte p = calcCRC8(buff, len);
   return rec[len - 1] == p;
 }
 
@@ -141,10 +163,11 @@ void loop() {
 void updateTempsEcoule()
 {
   tempsEcoule += deltaTemps;
+  /*
   if (tempsEcoule >= tropLongtemps)
   {
     digitalWrite(led_pin, LOW);
-  }
+  }*/
   //Serial.println(tempsEcoule);
 }
 
