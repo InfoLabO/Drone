@@ -12,6 +12,7 @@ const int PolyNum = 0x50;
 
 const char NomsMoteurs[] = {'A', 'B', 'C', 'D'};
 const int PinsMoteurs[] = {3,5,6,9};
+const size_t NbMoteurs = sizeof(PinsMoteurs) / sizeof(PinsMoteurs[0]);
 
 static inline byte CRC8(const byte data, byte poly)
 {
@@ -36,6 +37,13 @@ const int tropLongtemps = 2000;    //Durée en secondes, au delà, on considère
 
 void setup() {
   pinMode(led_pin, OUTPUT);
+
+  for (size_t i = 0; i < NbMoteurs; ++i)
+  {
+    pinMode(PinsMoteurs[i], OUTPUT);
+    analogWrite(PinsMoteurs[i], 0);
+  }
+  
   vw_set_tx_pin(transmit_pin);
   vw_set_rx_pin(receive_pin);
   vw_set_ptt_pin(transmit_en_pin);
@@ -83,12 +91,11 @@ void existenceEmetteur()
   
 }
 
-inline void changer_Valeur_Moteur(char const nomMoteur, byte newValeur)
+inline void changer_Valeur_Moteur(char const nomMoteur, byte const newValeur)
 {
-  const size_t len = sizeof(PinsMoteurs) / sizeof(PinsMoteurs[0]);
   const int* pins = PinsMoteurs;
   const char* noms = NomsMoteurs;
-  for (int i = 0; i < len; i++)
+  for (size_t i = 0; i < NbMoteurs; i++)
   {
     if (nomMoteur == *noms)
     {
@@ -107,10 +114,9 @@ inline void changer_Valeur_Moteur(char const nomMoteur, byte newValeur)
 //Le buffer passé en paramètre doit avoir au moins quatre valeurs, dans l'ordre 'A','B','C','D'
 void changer_Tous_Moteurs(uint8_t const* valeursMoteurs)
 {
-  const size_t len = sizeof(PinsMoteurs) / sizeof(PinsMoteurs[0]);
   const int* pins = PinsMoteurs;
   Serial.println("Change la valeur de tous les moteurs");
-  for (int i = 0; i < len; ++i)
+  for (size_t i = 0; i < NbMoteurs; ++i)
   {
     Serial.print("Change la valeur du moteur ");
     Serial.print(NomsMoteurs[i]);
@@ -120,8 +126,8 @@ void changer_Tous_Moteurs(uint8_t const* valeursMoteurs)
     valeursMoteurs++;
     pins++;
   }
-  Serial.println('');
-  Serial.println('');
+  Serial.println("");
+  Serial.println("");
 }
 
 void messageRecu_bonChecksum(uint8_t* const buff, const int len)
@@ -130,21 +136,29 @@ void messageRecu_bonChecksum(uint8_t* const buff, const int len)
         printBuffer(buff, len);
         Serial.print("\nChecksum:");
         Serial.println(buff[len-1]);
-        Serial.print("\n\n\n");
 
         switch( len)
         {
           case 3:
           {
-          changer_Valeur_Moteur(buff[0], buff[1]);
-          break;
+            changer_Valeur_Moteur(buff[0], buff[1]);
+            break;
           }
           case 6:
           {
             changer_Tous_Moteurs(buff);
             break;
           }
+          default:
+          {
+            Serial.print("Bad length: ");
+            Serial.print(len);
+            Serial.println(". Expected 3 (change one engine) or 6 (change all engines)");
+            break;
+          }
         }
+        
+        Serial.print("\n\n\n");
 }
 
 void messageRecu_mauvaisChecksum(uint8_t* const buff, const int len)
