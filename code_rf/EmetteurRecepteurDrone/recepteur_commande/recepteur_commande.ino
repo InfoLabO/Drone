@@ -3,34 +3,15 @@
 
 #include <VirtualWire.h>
 
-template<typename K, typename V>
-struct Pair {
-  public:
-  K first;
-  V second;
-
-  Pair(K const& k, V const& v): first{k}, second{v}
-    {   } 
-
-  Pair() {  }
-};
-
-template<typename K, typename V, int tailleMax>
-class Map {
-  public:
-    V const& operator[](K const& k) const { 
-    }
-
-  private:
-    Pair<K, V> pairs[tailleMax];
-};
-
 const int led_pin = 13;
 const int transmit_pin = 12;
 const int receive_pin = 11;
 const int transmit_en_pin = 3;
 
 const int PolyNum = 0x50;
+
+const char NomsMoteurs[] = {'A', 'B', 'C', 'D'};
+const int PinsMoteurs[] = {3,5,6,9};
 
 static inline byte CRC8(const byte data, byte poly)
 {
@@ -69,21 +50,22 @@ void setup() {
 
 uint8_t rec[20];
 
-byte calcCRC8(uint8_t const* const buff, const int len)   //len = longueur du buffer incluant le checksum
+//Calculer le checksum d'un buffer d'octets. len = longueur du buffer incluant le checksum
+byte calcCRC8(uint8_t const* const buff, const int len)
 {
   byte p = PolyNum;
-  const size_t last = sizeof(rec) - 1;
   for (int i = 0; i < len - 1; i++)
   {
-    p = CRC8(rec[i], p);
+    p = CRC8(buff[i], p);
   }
   return p;
 }
 
-bool checkCRC8(uint8_t const* const buff, const int len)   //Vérifier que le dernier octet d'un buffer correspond bien au checksum du reste du buffer. len = longueur du buffer incluant le checksum.
+//Vérifier que le dernier octet d'un buffer correspond bien au checksum du reste du buffer. len = longueur du buffer incluant le checksum.
+bool checkCRC8(uint8_t const* const buff, const int len)
 {
-  const byte p = calcCRC8(buff, len);
-  return rec[len - 1] == p;
+  const byte checksum = calcCRC8(buff, len);
+  return rec[len - 1] == checksum;
 }
 
 //Envoyer un buffer dans le serial port.
@@ -101,6 +83,47 @@ void existenceEmetteur()
   
 }
 
+inline void changer_Valeur_Moteur(char const nomMoteur, byte newValeur)
+{
+  const size_t len = sizeof(PinsMoteurs) / sizeof(PinsMoteurs[0]);
+  const int* pins = PinsMoteurs;
+  const char* noms = NomsMoteurs;
+  for (int i = 0; i < len; i++)
+  {
+    if (nomMoteur == *noms)
+    {
+      analogWrite(*pins, newValeur);
+      Serial.print("Change la valeur du moteur ");
+      Serial.print(nomMoteur);
+      Serial.print(": ");
+      Serial.println(newValeur);
+      return;
+    }
+    pins++;
+    noms++;
+  }
+}
+
+//Le buffer passé en paramètre doit avoir au moins quatre valeurs, dans l'ordre 'A','B','C','D'
+void changer_Tous_Moteurs(uint8_t const* valeursMoteurs)
+{
+  const size_t len = sizeof(PinsMoteurs) / sizeof(PinsMoteurs[0]);
+  const int* pins = PinsMoteurs;
+  Serial.println("Change la valeur de tous les moteurs");
+  for (int i = 0; i < len; ++i)
+  {
+    Serial.print("Change la valeur du moteur ");
+    Serial.print(NomsMoteurs[i]);
+    Serial.print(": ");
+    Serial.println(*valeursMoteurs);
+    analogWrite(*pins, *valeursMoteurs);
+    valeursMoteurs++;
+    pins++;
+  }
+  Serial.println('');
+  Serial.println('');
+}
+
 void messageRecu_bonChecksum(uint8_t* const buff, const int len)
 {
         Serial.println("Message OK");
@@ -108,9 +131,19 @@ void messageRecu_bonChecksum(uint8_t* const buff, const int len)
         Serial.print("\nChecksum:");
         Serial.println(buff[len-1]);
         Serial.print("\n\n\n");
-        if (*buff == 0)
+
+        switch( len)
         {
-          
+          case 3:
+          {
+          changer_Valeur_Moteur(buff[0], buff[1]);
+          break;
+          }
+          case 6:
+          {
+            changer_Tous_Moteurs(buff);
+            break;
+          }
         }
 }
 
@@ -163,11 +196,5 @@ void loop() {
 void updateTempsEcoule()
 {
   tempsEcoule += deltaTemps;
-  /*
-  if (tempsEcoule >= tropLongtemps)
-  {
-    digitalWrite(led_pin, LOW);
-  }*/
-  //Serial.println(tempsEcoule);
 }
 
