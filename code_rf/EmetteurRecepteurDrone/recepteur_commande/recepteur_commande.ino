@@ -33,7 +33,7 @@ Timer t;
 
 int tempsEcoule = 0;
 const int deltaTemps = 50;
-const int tropLongtemps = 2000;    //Durée en secondes, au delà, on considère que l'emetteur et le récepteur ne sont plus en contact.
+const int tropLongtemps = 2000;    //Durée en millisecondes, au delà, on considère que l'emetteur et le récepteur ne sont plus en contact.
 
 void setup() {
   pinMode(led_pin, OUTPUT);
@@ -132,6 +132,8 @@ void changer_Tous_Moteurs(uint8_t const* valeursMoteurs)
 
 void messageRecu_bonChecksum(uint8_t* const buff, const int len)
 {
+  tempsEcoule = 0;
+  digitalWrite(led_pin, LOW);
         Serial.println("Message OK");
         printBuffer(buff, len);
         Serial.print("\nChecksum:");
@@ -173,11 +175,10 @@ void messageRecu_mauvaisChecksum(uint8_t* const buff, const int len)
 }
 
 void loop() {
+  t.update();
   uint8_t len = sizeof(rec);
   if (vw_get_message(rec, &len))
   {
-  //if (len == sizeof(rec))
-    //{
       if (checkCRC8(rec, len))
       {
         messageRecu_bonChecksum(rec, len);
@@ -186,29 +187,14 @@ void loop() {
       {
         messageRecu_mauvaisChecksum(rec, len);
       }
-    /*}
-    else {
-      Serial.println("\nBad length");
-      printBuffer(len);
-        Serial.print("\n\n\n");
-    }*/
   }
-  /*
-    if (vw_get_message(rec, &len))
-    {
-
-    if (len == 1 && b == 'V')
-    {
-      digitalWrite(led_pin, HIGH);
-      tempsEcoule = 0;
-    }
-    }
-    t.update();
-  */
 }
 
 void updateTempsEcoule()
 {
   tempsEcoule += deltaTemps;
+  if (tempsEcoule >= tropLongtemps) {
+      digitalWrite(led_pin, HIGH);
+  }
 }
 
