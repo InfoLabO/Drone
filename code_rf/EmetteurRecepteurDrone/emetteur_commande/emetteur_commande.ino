@@ -33,8 +33,27 @@ void setup() {
     randomSeed(analogRead(2));
 }
 
-uint8_t msg = 'V';
-uint8_t buf[20];
+struct Joystick {
+  
+public:
+   //Axe des X => parallèles à la direction des pins.
+  
+  int X, Y;
+
+  Joystick(int pinX, int pinY) :
+      pinX(pinX), pinY(pinY)
+  {
+  }
+
+  void readValues() {
+     this->X = analogRead(pinX);
+     this->Y = analogRead(pinY);
+  }
+
+private:
+  
+  const int pinX, pinY;
+};
 
 void populateRandom(uint8_t* const buff, const int len)
 {
@@ -53,91 +72,23 @@ void calcCRC8OfBuffer(uint8_t* const buff, const int len)     //Len = taille du 
   buff[len] = p;
 }
 
-char c = 0;
+//char c = 0;
 byte motA = 0, motB = 0, motC = 0, motD = 0;
 
-/*
-void construireMessage(uint8_t* const buff, const int len)
-{
-  //populateRandom(buff, len);
-  calcCRC8OfBuffer(buff, len - 1);
-}*/
+Joystick j1(A0, A1), j2(A4, A5);
 
 void construireCommande(void) {
-  if (c < 'A' || c > 'E') {
-    return;
-  }
-  const int incr = 20;
-  uint8_t buffUnMoteur[3], buffTousMoteurs[5];
-  switch (c) {
-    case 'A':
-    {
-      buffUnMoteur[1] = (motA += incr);
-      break;
-    }
-    case 'B':
-    {
-      buffUnMoteur[1] = (motB += incr);
-      break;
-    }
-    case 'C':
-    {
-      buffUnMoteur[1] = (motC += incr);
-      break;
-    }
-    case 'D':
-    {
-      buffUnMoteur[1] = (motD += incr);
-    }
-    case 'E':
-    {
-      buffTousMoteurs[0] = motA += incr;
-      buffTousMoteurs[1] = motB += incr;
-      buffTousMoteurs[2] = motC += incr;
-      buffTousMoteurs[3] = motD += incr;
-      break;
-    }
-  }
-  if (c >= 'A' && c <= 'D') {
-    buffUnMoteur[0] = c;
-  }
-
-  //Envoi de la commande
-  if (c == 'E')
-  {
-    const int len = sizeof(buffTousMoteurs) - 1;
-    calcCRC8OfBuffer(buffTousMoteurs, len);
-    vw_send(buffTousMoteurs, len);    
-  }
-  else {
-    const int len = sizeof(buffTousMoteurs) - 1;
-    calcCRC8OfBuffer(buffUnMoteur, sizeof(buffUnMoteur) - 1);
-    vw_send(buffUnMoteur, len);
-  }
-  c = 0;
+  uint8_t buff[5];
+  Serial.println(j1.X);
+  Serial.println(j1.Y);
+  Serial.println(j2.X);
+  Serial.println(j2.Y);
+  Serial.println("\n\n\n\n");
 }
 
 void loop() {
-  /*
-  constexpr auto len = sizeof(buf);
-  construireMessage(buf, len);
-  vw_send(buf, len);
-  vw_wait_tx();   //Attendre la fin de l'envoi du message.
-  delay(3000);
-  buf[len - 1] += 7;   //On perturbe le checksum pour que l'émetteur ne le reconaisse pas.
-  vw_send(buf, len);
-  vw_wait_tx();
-  delay(3000);
-  */
+  j1.readValues();
+  j2.readValues();
   construireCommande();
   delay(300);
 }
-
-void serialEvent() {
-  if (!Serial.available())
-      return;
-  c= Serial.read();   //On prend le premier caractère reçu
-
-  while (Serial.available() && Serial.read() == '\n');   //On bouffe tout le reste.
-}
-
