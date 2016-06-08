@@ -11,7 +11,7 @@ const int transmit_en_pin = 3;
 const int PolyNum = 0x50;
 
 const char NomsMoteurs[] = {'A', 'B', 'C', 'D'};
-const int PinsMoteurs[] = {3,5,6,9};
+const int PinsMoteurs[] = {3, 5, 6, 9};
 const size_t NbMoteurs = sizeof(PinsMoteurs) / sizeof(PinsMoteurs[0]);
 
 static inline byte CRC8(const byte data, byte poly)
@@ -43,7 +43,7 @@ void setup() {
     pinMode(PinsMoteurs[i], OUTPUT);
     analogWrite(PinsMoteurs[i], 0);
   }
-  
+
   vw_set_tx_pin(transmit_pin);
   vw_set_rx_pin(receive_pin);
   vw_set_ptt_pin(transmit_en_pin);
@@ -84,11 +84,6 @@ void printBuffer(uint8_t const* const buff, const int len)
     Serial.print(buff[i]);
     Serial.print(' ');
   }
-}
-
-void existenceEmetteur()
-{
-  
 }
 
 inline void changer_Valeur_Moteur(char const nomMoteur, byte const newValeur)
@@ -134,44 +129,44 @@ void messageRecu_bonChecksum(uint8_t* const buff, const int len)
 {
   tempsEcoule = 0;
   digitalWrite(led_pin, LOW);
-        Serial.println("Message OK");
-        printBuffer(buff, len);
-        Serial.print("\nChecksum:");
-        Serial.println(buff[len-1]);
+  Serial.println("Message OK");
+  printBuffer(buff, len);
+  Serial.print("\nChecksum:");
+  Serial.println(buff[len - 1]);
 
-        switch( len)
-        {
-          case 3:
-          {
-            changer_Valeur_Moteur(buff[0], buff[1]);
-            break;
-          }
-          case 6:
-          {
-            changer_Tous_Moteurs(buff);
-            break;
-          }
-          default:
-          {
-            Serial.print("Bad length: ");
-            Serial.print(len);
-            Serial.println(". Expected 3 (change one engine) or 6 (change all engines)");
-            break;
-          }
-        }
-        
-        Serial.print("\n\n\n");
+  switch ( len)
+  {
+    case 3:
+      {
+        changer_Valeur_Moteur(buff[0], buff[1]);
+        break;
+      }
+    case 5:
+      {
+        changer_Tous_Moteurs(buff);
+        break;
+      }
+    default:
+      {
+        Serial.print("Bad length: ");
+        Serial.print(len);
+        Serial.println(". Expected 3 (change one engine) or 5 (change all engines)");
+        break;
+      }
+  }
+
+  Serial.print("\n\n\n");
 }
 
 void messageRecu_mauvaisChecksum(uint8_t* const buff, const int len)
 {
-        Serial.println("Message not OK");
-        printBuffer(buff, len - 1);
-        Serial.print("\nActual checksum:");
-        Serial.println(buff[len - 1]);
-        Serial.print("Expected checksum:");
-        Serial.println(calcCRC8(buff, len));
-        Serial.print("\n\n\n");
+  Serial.println("Message not OK");
+  printBuffer(buff, len - 1);
+  Serial.print("\nActual checksum:");
+  Serial.println(buff[len - 1]);
+  Serial.print("Expected checksum:");
+  Serial.println(calcCRC8(buff, len));
+  Serial.print("\n\n\n");
 }
 
 void loop() {
@@ -179,14 +174,14 @@ void loop() {
   uint8_t len = sizeof(rec);
   if (vw_get_message(rec, &len))
   {
-      if (checkCRC8(rec, len))
-      {
-        messageRecu_bonChecksum(rec, len);
-      }
-      else
-      {
-        messageRecu_mauvaisChecksum(rec, len);
-      }
+    if (checkCRC8(rec, len))
+    {
+      messageRecu_bonChecksum(rec, len);
+    }
+    else
+    {
+      messageRecu_mauvaisChecksum(rec, len);
+    }
   }
 }
 
@@ -194,7 +189,7 @@ void updateTempsEcoule()
 {
   tempsEcoule += deltaTemps;
   if (tempsEcoule >= tropLongtemps) {
-      digitalWrite(led_pin, HIGH);
+    digitalWrite(led_pin, HIGH);
   }
 }
 
