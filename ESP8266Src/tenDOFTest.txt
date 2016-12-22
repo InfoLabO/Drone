@@ -1,0 +1,17 @@
+--LSM303_ADDRESS_ACCEL = 0x19
+--LSM303_ADDRESS_MAG   = 0x1E
+
+i2c.setup(0, 1, 2, i2c.SLOW)
+
+
+function read_reg(dev_addr, reg_addr)
+    i2c.start(0)
+    i2c.address(0, dev_addr, i2c.TRANSMITTER)
+    i2c.write(0, reg_addr)
+    i2c.stop(0)
+    i2c.start(0)
+    i2c.address(0, dev_addr, i2c.RECEIVER)
+    c = string.byte(i2c.read(0, 1),1)
+    i2c.stop(0)
+    return c
+end
